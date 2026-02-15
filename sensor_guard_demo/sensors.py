@@ -167,3 +167,45 @@ def decay_recovery_sensor(context):
 
     yield RunRequest(run_key=f"decay-{context.cursor or 0}")
     context.update_cursor(str(int(context.cursor or 0) + 1))
+
+
+# ---------------------------------------------------------------------------
+# Sensor 6: Per-key failure tracking — demonstrates independent tracking
+#            for multiple resources within a single sensor
+# ---------------------------------------------------------------------------
+_multi_table_tick = 0  # module-level counter (resets when dagster dev restarts)
+
+
+@sensor(job=refresh_data_job, minimum_interval_seconds=10)
+@resilient_sensor(threshold=3, per_key=True)
+def multi_table_sensor(context, guard):
+    """Demonstrates per-key failure tracking across 3 simulated tables.
+
+    Each table has its own independent error counter, so a failure in one
+    does not affect the others.
+
+    Tick 1: orders ok, customers fail (1/3), inventory fail (1/3)
+    Tick 2: orders ok, customers fail (2/3), inventory fail (2/3)
+    Tick 3: orders ok, customers ok (resets),  inventory fail (3/3)
+    Tick 4: orders ok, customers ok,           inventory fail → breach
+    Tick 5+: orders ok, customers ok,          inventory ok
+    """
+    global _multi_table_tick  # noqa: PLW0603
+    tick = _multi_table_tick
+    _multi_table_tick += 1
+
+    # --- orders: always healthy ---
+    with guard.track("orders"):
+        yield RunRequest(run_key=f"orders-{tick}")
+
+    # --- customers: flaky, fails first 2 ticks then recovers ---
+    with guard.track("customers"):
+        if tick < 2:
+            raise ConnectionError(f"customers table unreachable (tick {tick + 1})")
+        yield RunRequest(run_key=f"customers-{tick}")
+
+    # --- inventory: persistently broken, fails first 4 ticks ---
+    with guard.track("inventory"):
+        if tick < 4:
+            raise ConnectionError(f"inventory table unreachable (tick {tick + 1})")
+        yield RunRequest(run_key=f"inventory-{tick}")

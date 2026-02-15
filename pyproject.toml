@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [
     "dagster",
-    "dagster-sensor-guard",
+    "dagster-sensor-guard @ git+https://github.com/yudiell/dagster-sensor-guard.git@main",
     "dagster-webserver",
 ]
 
@@ -19,6 +19,9 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.dagster]
 module_name = "sensor_guard_demo.definitions"
