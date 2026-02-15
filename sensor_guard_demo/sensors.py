@@ -120,3 +120,50 @@ def recovers_after_failure_sensor(context):
 
     yield RunRequest(run_key=f"recovery-{context.cursor or 0}")
     context.update_cursor(str(int(context.cursor or 0) + 1))
+
+
+# ---------------------------------------------------------------------------
+# Sensor 5: Decay recovery demo — shows how decay_amount=1 requires sustained
+#            successes to fully recover from accumulated errors
+# ---------------------------------------------------------------------------
+# F=fail, S=succeed: FFFFF,S, F, SSSSSSSS, F, S
+_decay_script = [
+    False, False, False, False, False,    # fail 5 (breaches at fail 4)
+    True,                                 # recover 1 (count 5→4)
+    False,                                # fail again (count 4→5, breach)
+    True, True, True, True,              # recover 8 (count decays 5→4→3→2→1→0…)
+    True, True, True, True,
+    False,                                # fail again (count 0→1, suppressed)
+    True,                                 # recover (count 1→0)
+]
+_decay_tick = 0  # module-level counter (resets when dagster dev restarts)
+
+
+@sensor(job=refresh_data_job, minimum_interval_seconds=10)
+@resilient_sensor(threshold=3, reset_strategy="decay", decay_amount=1)
+def decay_recovery_sensor(context):
+    """Demonstrates decay reset under heavy error accumulation.
+
+    With threshold=3 and decay_amount=1, each success only subtracts 1
+    from the error count. This means the sensor needs many consecutive
+    successes to fully recover from a streak of failures.
+
+    Tick  1-3:  Errors suppressed (1/3, 2/3, 3/3).
+    Tick  4:    Threshold breached — error raised to Dagster.
+    Tick  5:    Still failing — breached again.
+    Tick  6:    Recovers once — count decays from 5 to 4 (still elevated).
+    Tick  7:    Fails — count back to 5, breached.
+    Tick  8-15: Recovers 8 times — count decays 5→4→3→2→1→0→0→0.
+    Tick 16:    Fails — count 0→1, suppressed (proves full recovery).
+    Tick 17+:   Recovers and continues normally.
+    """
+    global _decay_tick  # noqa: PLW0603
+    tick = _decay_tick
+    _decay_tick += 1
+
+    # Past the script? Always succeed.
+    if tick < len(_decay_script) and not _decay_script[tick]:
+        raise ConnectionError(f"Simulated service outage (tick {tick + 1})")
+
+    yield RunRequest(run_key=f"decay-{context.cursor or 0}")
+    context.update_cursor(str(int(context.cursor or 0) + 1))

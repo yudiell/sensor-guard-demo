@@ -16,9 +16,6 @@ dev = [
     "pytest",
 ]
 
-[tool.uv.sources]
-dagster-sensor-guard = { git = "https://github.com/yudiell/dagster-sensor-guard.git", branch = "Y/1" }
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

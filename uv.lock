@@ -412,9 +412,13 @@ wheels = [
 [[package]]
 name = "dagster-sensor-guard"
 version = "0.1.0"
-source = { git = "https://github.com/yudiell/dagster-sensor-guard.git?branch=Y%2F1#7e4c3e030f888ce61a8637cf53e9da7d42f2fc2a" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dagster" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/67/e2/46ac660d50641cba5578f9a189f4c465a3904bb12b63638b2fc8136bd7a9/dagster_sensor_guard-0.1.0.tar.gz", hash = "sha256:ff659c785dc4430b2f78b994da5bbeefcebb590d9b0ddfb6c0651e286ba660ac", size = 6173, upload-time = "2026-02-15T04:06:58.062Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a1/f5/baa648ddad119752ceca9edfa94349cfa2e0fb7305d7c92ed3a984ed48d8/dagster_sensor_guard-0.1.0-py3-none-any.whl", hash = "sha256:9ae1352fb403ba4517a82b4f83c8db071553938fa1087876de0b8caf2385ee06", size = 8248, upload-time = "2026-02-15T04:06:56.592Z" },
 ]
 
 [[package]]
@@ -1413,7 +1417,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "dagster" },
-    { name = "dagster-sensor-guard", git = "https://github.com/yudiell/dagster-sensor-guard.git?branch=Y%2F1" },
+    { name = "dagster-sensor-guard" },
     { name = "dagster-webserver" },
 ]
 
